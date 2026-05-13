@@ -1,0 +1,1906 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
+<title>ClubOS Swift Trivia — 13 Eras</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #020C18;
+    --bg-2: #0A1628;
+    --bg-card: #0F1F36;
+    --ink: #F4EFE6;
+    --ink-dim: rgba(244,239,230,0.6);
+    --ink-faint: rgba(244,239,230,0.2);
+    --gold: #D4AF52;
+    --gold-soft: rgba(212,175,82,0.15);
+    --jodi: #C4A4D8;     /* Speak Now lilac */
+    --jodi-deep: #6E4F87;
+    --bill: #5DADE0;     /* Debut blue */
+    --bill-deep: #1F5780;
+    --correct: #5EBF8E;
+    --wrong: #E07070;
+    --easter: #F5C16E;
+
+    /* Era palette — set dynamically via --era-* vars on body */
+    --era-1:  #6FB7C2;  /* Debut */
+    --era-2:  #D8A03A;  /* Fearless */
+    --era-3:  #9E7BB5;  /* Speak Now */
+    --era-4:  #B0383A;  /* Red */
+    --era-5:  #D4A6B4;  /* 1989 */
+    --era-6:  #1A1A1A;  /* Reputation */
+    --era-7:  #E8B5C8;  /* Lover */
+    --era-8:  #8FA38A;  /* Folklore */
+    --era-9:  #A8693E;  /* Evermore */
+    --era-10: #1F2952;  /* Midnights */
+    --era-11: #E8E2D5;  /* TTPD */
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: 'DM Sans', sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none;
+  }
+
+  /* Subtle grain */
+  body::before {
+    content: '';
+    position: fixed; inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.05'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 1000;
+    opacity: 0.5;
+  }
+
+  #root { width: 100%; height: 100%; }
+
+  .screen {
+    position: absolute;
+    inset: 0;
+    display: none;
+    flex-direction: column;
+    opacity: 0;
+    transition: opacity 0.5s ease;
+  }
+  .screen.active { display: flex; opacity: 1; }
+
+  /* ═══════════════════════════════════════════════════════════════
+     TV DISPLAY STYLES
+     ═══════════════════════════════════════════════════════════════ */
+
+  .tv {
+    background:
+      radial-gradient(ellipse at top, rgba(212,175,82,0.08), transparent 60%),
+      radial-gradient(ellipse at bottom, var(--era-glow, rgba(196,164,216,0.08)), transparent 60%),
+      var(--bg);
+    transition: background 1.5s ease;
+  }
+
+  .tv-header {
+    height: 80px;
+    padding: 0 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid rgba(212,175,82,0.15);
+    flex-shrink: 0;
+  }
+  .brand-mark {
+    display: flex; align-items: center; gap: 14px;
+  }
+  .brand-wordmark {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+  }
+  .brand-wordmark .club { color: var(--ink); }
+  .brand-wordmark .os { color: var(--gold); }
+  .brand-divider {
+    width: 1px; height: 24px;
+    background: rgba(212,175,82,0.3);
+  }
+  .game-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 24px;
+    letter-spacing: 4px;
+    color: var(--ink);
+  }
+  .game-name span { color: var(--gold); }
+
+  .round-indicator {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+  .round-label {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .round-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 2px;
+    color: var(--ink);
+  }
+  .round-num span { color: var(--gold); }
+
+  .timer-block {
+    display: flex; align-items: center; gap: 12px;
+  }
+  .timer-circle {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    border: 2px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'DM Mono', monospace;
+    font-size: 22px;
+    color: var(--ink);
+    transition: border-color 0.3s, color 0.3s, transform 0.2s;
+  }
+  .timer-circle.warning { border-color: var(--wrong); color: var(--wrong); animation: pulse 0.6s ease-in-out infinite; }
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.08); }
+  }
+
+  /* ── SCOREBOARD ─────────────────────────────────────────────── */
+  .scoreboard {
+    display: grid;
+    grid-template-columns: 1fr 80px 1fr;
+    align-items: center;
+    padding: 24px 56px 16px;
+    gap: 24px;
+    flex-shrink: 0;
+  }
+  .player-card {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    padding: 16px 22px;
+    background: var(--bg-card);
+    border-radius: 14px;
+    border: 1px solid var(--ink-faint);
+    transition: border-color 0.3s, box-shadow 0.3s;
+  }
+  .player-card.right { flex-direction: row-reverse; text-align: right; }
+  .player-card.player-jodi { border-color: rgba(196,164,216,0.4); }
+  .player-card.player-bill { border-color: rgba(93,173,224,0.4); }
+  .player-card.locked { box-shadow: 0 0 0 2px var(--gold), 0 0 24px rgba(212,175,82,0.3); }
+
+  .player-avatar {
+    width: 56px; height: 56px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .player-jodi .player-avatar { background: var(--jodi-deep); color: var(--jodi); border: 2px solid var(--jodi); }
+  .player-bill .player-avatar { background: var(--bill-deep); color: var(--bill); border: 2px solid var(--bill); }
+
+  .player-info { flex: 1; }
+  .player-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 3px;
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .player-status {
+    font-size: 11px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .player-status.connected { color: var(--correct); }
+  .player-status.locked { color: var(--gold); }
+
+  .player-score {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    line-height: 1;
+    color: var(--ink);
+    letter-spacing: 1px;
+    transition: transform 0.4s, color 0.4s;
+  }
+  .player-score.bump { transform: scale(1.3); color: var(--correct); }
+
+  .vs-divider {
+    text-align: center;
+  }
+  .vs-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: var(--gold);
+    line-height: 1;
+  }
+
+  /* ── BRACELET STRING ───────────────────────────────────────── */
+  .bracelet-row {
+    padding: 4px 56px 12px;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    flex-shrink: 0;
+  }
+  .bracelet-track {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 28px;
+    padding: 4px 12px;
+    border-radius: 14px;
+    background: rgba(255,255,255,0.02);
+  }
+  .bracelet-track.right { justify-content: flex-end; }
+  .bracelet-track-label {
+    font-size: 9px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-right: auto;
+  }
+  .bracelet-track.right .bracelet-track-label { margin-left: auto; margin-right: 0; order: 99; }
+
+  .bracelet {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 9px;
+    background: var(--gold-soft);
+    border: 1px solid var(--gold);
+    border-radius: 11px;
+    font-size: 10px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    font-weight: 600;
+    animation: braceletIn 0.6s cubic-bezier(.34,1.56,.64,1) both;
+  }
+  @keyframes braceletIn {
+    from { opacity: 0; transform: scale(0.4) rotate(-15deg); }
+    to { opacity: 1; transform: scale(1) rotate(0); }
+  }
+
+  /* ── QUESTION STAGE ─────────────────────────────────────────── */
+  .stage {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 16px 56px 32px;
+    overflow: hidden;
+    position: relative;
+  }
+
+  .era-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 6px 16px;
+    border: 1px solid var(--era-color, var(--gold));
+    border-radius: 20px;
+    background: rgba(0,0,0,0.3);
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--era-color, var(--gold));
+    margin-bottom: 24px;
+    transition: color 0.6s, border-color 0.6s;
+  }
+  .era-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: var(--era-color, var(--gold));
+    transition: background 0.6s;
+  }
+
+  .question-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-weight: 500;
+    text-align: center;
+    line-height: 1.25;
+    max-width: 1400px;
+    margin-bottom: 36px;
+    color: var(--ink);
+  }
+
+  .answer-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    width: 100%;
+    max-width: 1100px;
+  }
+  .answer-tile {
+    background: var(--bg-card);
+    border: 1.5px solid var(--ink-faint);
+    border-radius: 14px;
+    padding: 22px 28px;
+    display: flex;
+    align-items: center;
+    gap: 20px;
+    transition: all 0.4s;
+    position: relative;
+    overflow: hidden;
+  }
+  .answer-tile.reveal-correct {
+    background: rgba(94,191,142,0.15);
+    border-color: var(--correct);
+  }
+  .answer-tile.reveal-wrong {
+    opacity: 0.4;
+  }
+
+  .answer-letter {
+    width: 44px; height: 44px;
+    border-radius: 12px;
+    background: var(--gold-soft);
+    border: 1px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    color: var(--gold);
+    letter-spacing: 1px;
+    flex-shrink: 0;
+  }
+  .answer-tile.reveal-correct .answer-letter {
+    background: var(--correct);
+    border-color: var(--correct);
+    color: var(--bg);
+  }
+
+  .answer-text {
+    font-size: 22px;
+    color: var(--ink);
+    flex: 1;
+    line-height: 1.3;
+  }
+
+  .answer-pickers {
+    position: absolute;
+    top: 8px; right: 12px;
+    display: flex;
+    gap: 4px;
+  }
+  .answer-pick-dot {
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+  .answer-pick-dot.jodi { background: var(--jodi); }
+  .answer-pick-dot.bill { background: var(--bill); }
+
+  /* Special question markers */
+  .question-flag {
+    position: absolute;
+    top: 24px; right: 32px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+  }
+  .question-flag.easter {
+    background: var(--easter);
+    color: #4A2E0A;
+    box-shadow: 0 0 24px rgba(245,193,110,0.5);
+    animation: shimmer 2s ease-in-out infinite;
+  }
+  .question-flag.surprise {
+    background: linear-gradient(135deg, var(--jodi), var(--bill));
+    color: var(--bg);
+  }
+  .question-flag.mastermind {
+    background: var(--gold);
+    color: var(--bg);
+    box-shadow: 0 0 32px rgba(212,175,82,0.5);
+  }
+  @keyframes shimmer {
+    0%, 100% { box-shadow: 0 0 24px rgba(245,193,110,0.5); }
+    50% { box-shadow: 0 0 36px rgba(245,193,110,0.8); }
+  }
+
+  /* ── REVEAL OVERLAY ─────────────────────────────────────────── */
+  .reveal-banner {
+    position: absolute;
+    bottom: 32px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--bg-card);
+    border: 1px solid var(--gold);
+    border-radius: 14px;
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    opacity: 0;
+    transition: opacity 0.5s;
+  }
+  .reveal-banner.show { opacity: 1; }
+  .reveal-result {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 3px;
+  }
+  .reveal-result.jodi { color: var(--jodi); }
+  .reveal-result.bill { color: var(--bill); }
+
+  /* ═══════════════════════════════════════════════════════════════
+     LOBBY / FINALE
+     ═══════════════════════════════════════════════════════════════ */
+
+  .lobby, .countdown, .finale {
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    text-align: center;
+  }
+
+  .lobby-eyebrow {
+    font-size: 13px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+  .lobby-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 88px;
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 12px;
+    color: var(--ink);
+  }
+  .lobby-title em {
+    font-style: italic;
+    color: var(--gold);
+  }
+  .lobby-subtitle {
+    font-size: 18px;
+    color: var(--ink-dim);
+    letter-spacing: 1px;
+    margin-bottom: 56px;
+  }
+
+  .lobby-grid {
+    display: grid;
+    grid-template-columns: 280px 280px;
+    gap: 56px;
+    align-items: center;
+    margin-bottom: 48px;
+  }
+  .lobby-qr-block {
+    background: var(--bg-card);
+    border: 1px solid var(--gold);
+    border-radius: 18px;
+    padding: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+  }
+  .lobby-qr-img {
+    width: 220px; height: 220px;
+    background: white;
+    border-radius: 10px;
+    padding: 14px;
+  }
+  .lobby-qr-label {
+    font-size: 12px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .lobby-qr-url {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--ink-dim);
+    word-break: break-all;
+    text-align: center;
+  }
+
+  .lobby-players {
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+  }
+  .lobby-slot {
+    background: var(--bg-card);
+    border: 1.5px solid var(--ink-faint);
+    border-radius: 14px;
+    padding: 18px 24px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    transition: all 0.4s;
+  }
+  .lobby-slot.connected.jodi {
+    border-color: var(--jodi);
+    box-shadow: 0 0 24px rgba(196,164,216,0.3);
+  }
+  .lobby-slot.connected.bill {
+    border-color: var(--bill);
+    box-shadow: 0 0 24px rgba(93,173,224,0.3);
+  }
+  .lobby-slot-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 32px;
+    letter-spacing: 4px;
+  }
+  .lobby-slot.jodi .lobby-slot-name { color: var(--jodi); }
+  .lobby-slot.bill .lobby-slot-name { color: var(--bill); }
+  .lobby-slot-status {
+    margin-left: auto;
+    font-size: 12px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+  .lobby-slot.connected .lobby-slot-status {
+    color: var(--correct);
+  }
+  .lobby-slot-status::before {
+    content: '○';
+    margin-right: 6px;
+  }
+  .lobby-slot.connected .lobby-slot-status::before {
+    content: '●';
+  }
+
+  .lobby-instructions {
+    font-size: 16px;
+    color: var(--ink-dim);
+    max-width: 600px;
+    line-height: 1.6;
+  }
+  .lobby-instructions b { color: var(--gold); }
+
+  /* ── COUNTDOWN ─────────────────────────────────────────────── */
+  .countdown-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 320px;
+    line-height: 1;
+    color: var(--gold);
+    animation: countdownPulse 1s ease-out;
+  }
+  .countdown-label {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 32px;
+    color: var(--ink-dim);
+    margin-top: 16px;
+  }
+  @keyframes countdownPulse {
+    0% { transform: scale(0.5); opacity: 0; }
+    50% { transform: scale(1.1); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+
+  /* ── FINALE ─────────────────────────────────────────────────── */
+  .finale-eyebrow {
+    font-size: 13px;
+    letter-spacing: 6px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 20px;
+  }
+  .finale-winner-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 120px;
+    font-weight: 600;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .finale-winner-name.jodi { color: var(--jodi); }
+  .finale-winner-name.bill { color: var(--bill); }
+  .finale-winner-name.tie { color: var(--gold); }
+  .finale-tagline {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 28px;
+    color: var(--ink-dim);
+    margin-bottom: 48px;
+  }
+  .finale-scores {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 32px;
+    width: 100%;
+    max-width: 900px;
+    margin-bottom: 40px;
+  }
+  .finale-score-card {
+    background: var(--bg-card);
+    border-radius: 18px;
+    padding: 32px;
+    text-align: center;
+  }
+  .finale-score-card.jodi { border: 2px solid var(--jodi); }
+  .finale-score-card.bill { border: 2px solid var(--bill); }
+  .finale-score-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  .finale-score-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 96px;
+    line-height: 1;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .finale-bracelets {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    justify-content: center;
+    min-height: 28px;
+  }
+
+  .finale-cta {
+    background: var(--gold);
+    color: var(--bg);
+    border: none;
+    padding: 18px 48px;
+    border-radius: 14px;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 22px;
+    letter-spacing: 4px;
+    cursor: pointer;
+    transition: transform 0.2s;
+  }
+  .finale-cta:active { transform: scale(0.98); }
+
+  /* ═══════════════════════════════════════════════════════════════
+     PHONE STYLES
+     ═══════════════════════════════════════════════════════════════ */
+
+  body.is-phone {
+    overflow-y: auto;
+  }
+  body.is-phone, body.is-phone html { height: 100vh; }
+
+  .phone-screen {
+    position: relative;
+    width: 100%;
+    min-height: 100vh;
+    padding: 24px 20px;
+    display: none;
+    flex-direction: column;
+  }
+  .phone-screen.active { display: flex; }
+
+  /* Phone: Player Picker */
+  .pp-eyebrow {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-align: center;
+    margin-bottom: 12px;
+    margin-top: 24px;
+  }
+  .pp-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 36px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.1;
+    margin-bottom: 8px;
+  }
+  .pp-title em { font-style: italic; color: var(--gold); }
+  .pp-subtitle {
+    font-size: 14px;
+    text-align: center;
+    color: var(--ink-dim);
+    margin-bottom: 40px;
+  }
+  .pp-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    flex: 1;
+    justify-content: center;
+  }
+  .pp-btn {
+    background: var(--bg-card);
+    border: 2px solid var(--ink-faint);
+    border-radius: 18px;
+    padding: 28px 24px;
+    text-align: left;
+    cursor: pointer;
+    transition: transform 0.2s, border-color 0.3s;
+  }
+  .pp-btn:active { transform: scale(0.97); }
+  .pp-btn.jodi { border-color: var(--jodi); }
+  .pp-btn.bill { border-color: var(--bill); }
+  .pp-btn[disabled] { opacity: 0.3; pointer-events: none; }
+  .pp-btn-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    line-height: 1;
+    margin-bottom: 6px;
+  }
+  .pp-btn.jodi .pp-btn-name { color: var(--jodi); }
+  .pp-btn.bill .pp-btn-name { color: var(--bill); }
+  .pp-btn-status {
+    font-size: 12px;
+    color: var(--ink-dim);
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  /* Phone: Waiting Room */
+  .pw-banner {
+    background: var(--bg-card);
+    border: 2px solid;
+    border-radius: 18px;
+    padding: 32px 24px;
+    text-align: center;
+    margin: auto 0;
+  }
+  .pw-banner.jodi { border-color: var(--jodi); }
+  .pw-banner.bill { border-color: var(--bill); }
+  .pw-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    letter-spacing: 6px;
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .pw-banner.jodi .pw-name { color: var(--jodi); }
+  .pw-banner.bill .pw-name { color: var(--bill); }
+  .pw-message {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 22px;
+    color: var(--ink);
+    margin-bottom: 8px;
+  }
+  .pw-submessage {
+    font-size: 13px;
+    color: var(--ink-dim);
+    letter-spacing: 1px;
+  }
+  .pw-loader {
+    display: inline-block;
+    width: 24px; height: 24px;
+    border: 2px solid var(--ink-faint);
+    border-top-color: var(--gold);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    margin-top: 16px;
+  }
+  @keyframes spin { to { transform: rotate(360deg); } }
+
+  /* Phone: Question Answer */
+  .pq-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--ink-faint);
+    margin-bottom: 18px;
+  }
+  .pq-player-tag {
+    display: flex; align-items: center; gap: 8px;
+  }
+  .pq-player-dot {
+    width: 12px; height: 12px;
+    border-radius: 50%;
+  }
+  .pq-player-dot.jodi { background: var(--jodi); }
+  .pq-player-dot.bill { background: var(--bill); }
+  .pq-player-name {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    letter-spacing: 3px;
+  }
+  .pq-round {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--ink-dim);
+  }
+  .pq-round span { color: var(--gold); }
+
+  .pq-flag {
+    text-align: center;
+    margin-bottom: 14px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 11px;
+    letter-spacing: 2.5px;
+    text-transform: uppercase;
+    font-weight: 700;
+    align-self: center;
+  }
+  .pq-flag.easter { background: var(--easter); color: #4A2E0A; }
+  .pq-flag.surprise { background: linear-gradient(135deg, var(--jodi), var(--bill)); color: var(--bg); }
+  .pq-flag.mastermind { background: var(--gold); color: var(--bg); }
+  .pq-flag.hidden { display: none; }
+
+  .pq-question {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 22px;
+    line-height: 1.3;
+    color: var(--ink);
+    margin-bottom: 20px;
+    text-align: center;
+    font-weight: 500;
+  }
+  .pq-timer-bar {
+    height: 6px;
+    background: var(--ink-faint);
+    border-radius: 3px;
+    overflow: hidden;
+    margin-bottom: 24px;
+  }
+  .pq-timer-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--correct), var(--gold), var(--wrong));
+    width: 100%;
+    transition: width 0.95s linear;
+  }
+  .pq-options {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    flex: 1;
+  }
+  .pq-option {
+    background: var(--bg-card);
+    border: 2px solid var(--ink-faint);
+    border-radius: 14px;
+    padding: 18px 16px;
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    color: var(--ink);
+  }
+  .pq-option:active { transform: scale(0.98); }
+  .pq-option.locked { border-color: var(--gold); background: var(--gold-soft); }
+  .pq-option[disabled] { opacity: 0.5; pointer-events: none; }
+
+  .pq-option-letter {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    background: var(--gold-soft);
+    border: 1px solid var(--gold);
+    display: flex; align-items: center; justify-content: center;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 18px;
+    color: var(--gold);
+    flex-shrink: 0;
+  }
+  .pq-option-text {
+    flex: 1;
+    font-size: 15px;
+    line-height: 1.3;
+  }
+
+  /* Phone Reveal */
+  .pr-banner {
+    background: var(--bg-card);
+    border: 2px solid;
+    border-radius: 18px;
+    padding: 32px 20px;
+    text-align: center;
+    margin: auto 0;
+  }
+  .pr-banner.correct { border-color: var(--correct); }
+  .pr-banner.wrong { border-color: var(--wrong); }
+  .pr-result {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 56px;
+    letter-spacing: 6px;
+    line-height: 1;
+    margin-bottom: 12px;
+  }
+  .pr-banner.correct .pr-result { color: var(--correct); }
+  .pr-banner.wrong .pr-result { color: var(--wrong); }
+  .pr-message {
+    font-size: 14px;
+    color: var(--ink-dim);
+    margin-bottom: 8px;
+  }
+  .pr-correct-answer {
+    font-family: 'Cormorant Garamond', serif;
+    font-style: italic;
+    font-size: 18px;
+    color: var(--ink);
+    margin-bottom: 16px;
+  }
+  .pr-bracelet {
+    margin-top: 16px;
+    padding: 12px 20px;
+    background: var(--gold-soft);
+    border: 1px solid var(--gold);
+    border-radius: 12px;
+    color: var(--gold);
+    font-size: 13px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+    font-weight: 600;
+    animation: braceletIn 0.6s cubic-bezier(.34,1.56,.64,1);
+  }
+
+  /* Phone Finale */
+  .pf-card {
+    margin: auto 0;
+    text-align: center;
+    background: var(--bg-card);
+    border: 2px solid var(--gold);
+    border-radius: 18px;
+    padding: 32px 20px;
+  }
+  .pf-result {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 36px;
+    letter-spacing: 4px;
+    margin-bottom: 8px;
+  }
+  .pf-score-line {
+    font-family: 'DM Mono', monospace;
+    color: var(--ink-dim);
+    margin-bottom: 16px;
+  }
+  .pf-score-line span { color: var(--ink); font-weight: 600; }
+
+  /* Phone footer */
+  .phone-footer {
+    text-align: center;
+    margin-top: 24px;
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .phone-footer span { color: var(--gold); }
+
+  /* ═══════════════════════════════════════════════════════════════
+     RESPONSIVE / TV LAYOUT
+     ═══════════════════════════════════════════════════════════════ */
+  body.is-tv .phone-screen { display: none !important; }
+  body.is-phone .screen { display: none !important; }
+
+  @media (max-width: 768px) {
+    body { font-size: 14px; }
+  }
+
+  /* TV Footer */
+  .tv-footer {
+    height: 44px;
+    padding: 0 56px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-top: 1px solid rgba(212,175,82,0.15);
+    background: var(--bg);
+    flex-shrink: 0;
+  }
+  .tv-footer-text {
+    font-size: 10px;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+  }
+  .tv-footer-text b { color: var(--gold); }
+</style>
+</head>
+<body>
+<div id="root">
+
+  <!-- ─── TV: LOBBY ───────────────────────────────────────────── -->
+  <div class="screen lobby tv" id="tv-lobby">
+    <div class="lobby-eyebrow">ClubOS Games · Trivia</div>
+    <h1 class="lobby-title">13 <em>Eras</em></h1>
+    <p class="lobby-subtitle">A Taylor Swift Trivia Showdown</p>
+
+    <div class="lobby-grid">
+      <div class="lobby-qr-block">
+        <img id="lobbyQR" class="lobby-qr-img" alt="Scan to play">
+        <div class="lobby-qr-label">Scan to Play</div>
+        <div class="lobby-qr-url" id="lobbyURL"></div>
+      </div>
+      <div class="lobby-players">
+        <div class="lobby-slot jodi" id="slot-jodi">
+          <div class="lobby-slot-name">Jodi</div>
+          <div class="lobby-slot-status">Waiting</div>
+        </div>
+        <div class="lobby-slot bill" id="slot-bill">
+          <div class="lobby-slot-name">Bill</div>
+          <div class="lobby-slot-status">Waiting</div>
+        </div>
+      </div>
+    </div>
+
+    <p class="lobby-instructions">
+      Scan the code with your phone, claim <b>Jodi</b> or <b>Bill</b>, and the game begins.<br>
+      <b>13 questions · 11 eras · One crown</b>
+    </p>
+  </div>
+
+  <!-- ─── TV: COUNTDOWN ───────────────────────────────────────── -->
+  <div class="screen countdown tv" id="tv-countdown">
+    <div class="countdown-num" id="countdownNum">3</div>
+    <div class="countdown-label">Are you ready for it?</div>
+  </div>
+
+  <!-- ─── TV: GAME ────────────────────────────────────────────── -->
+  <div class="screen tv" id="tv-game">
+    <div class="tv-header">
+      <div class="brand-mark">
+        <div class="brand-wordmark"><span class="club">Club</span><span class="os">OS</span></div>
+        <div class="brand-divider"></div>
+        <div class="game-name">13 <span>ERAS</span></div>
+      </div>
+      <div class="round-indicator">
+        <div class="round-label">Question</div>
+        <div class="round-num"><span id="qNumCurrent">1</span> / 13</div>
+      </div>
+      <div class="timer-block">
+        <div class="timer-circle" id="tvTimer">25</div>
+      </div>
+    </div>
+
+    <div class="scoreboard">
+      <div class="player-card player-jodi" id="card-jodi">
+        <div class="player-avatar">J</div>
+        <div class="player-info">
+          <div class="player-name">Jodi</div>
+          <div class="player-status connected" id="status-jodi">Connected</div>
+        </div>
+        <div class="player-score" id="score-jodi">0</div>
+      </div>
+      <div class="vs-divider"><div class="vs-text">vs</div></div>
+      <div class="player-card player-bill right" id="card-bill">
+        <div class="player-avatar">B</div>
+        <div class="player-info">
+          <div class="player-name">Bill</div>
+          <div class="player-status connected" id="status-bill">Connected</div>
+        </div>
+        <div class="player-score" id="score-bill">0</div>
+      </div>
+    </div>
+
+    <div class="bracelet-row">
+      <div class="bracelet-track" id="bracelets-jodi">
+        <div class="bracelet-track-label">Jodi's Bracelets</div>
+      </div>
+      <div class="bracelet-track right" id="bracelets-bill">
+        <div class="bracelet-track-label">Bill's Bracelets</div>
+      </div>
+    </div>
+
+    <div class="stage" id="tvStage">
+      <div class="question-flag" id="qFlag" style="display:none;"></div>
+      <div class="era-tag"><div class="era-dot"></div><span id="eraName">Debut</span></div>
+      <div class="question-text" id="qText"></div>
+      <div class="answer-grid" id="qOptions"></div>
+      <div class="reveal-banner" id="revealBanner">
+        <div class="reveal-result" id="revealResultJodi"></div>
+        <div class="reveal-result" id="revealResultBill"></div>
+      </div>
+    </div>
+
+    <div class="tv-footer">
+      <div class="tv-footer-text">Powered by <b>ClubOS Games</b></div>
+      <div class="tv-footer-text">For <b>Jodi</b> · A 13-question love letter</div>
+    </div>
+  </div>
+
+  <!-- ─── TV: FINALE ──────────────────────────────────────────── -->
+  <div class="screen finale tv" id="tv-finale">
+    <div class="finale-eyebrow">The Verdict</div>
+    <div class="finale-winner-name" id="winnerName">Jodi</div>
+    <div class="finale-tagline" id="winnerTagline">She's a Mastermind.</div>
+    <div class="finale-scores">
+      <div class="finale-score-card jodi">
+        <div class="finale-score-name" style="color:var(--jodi);">Jodi</div>
+        <div class="finale-score-num" id="finalScoreJodi">0</div>
+        <div class="finale-bracelets" id="finalBraceletsJodi"></div>
+      </div>
+      <div class="finale-score-card bill">
+        <div class="finale-score-name" style="color:var(--bill);">Bill</div>
+        <div class="finale-score-num" id="finalScoreBill">0</div>
+        <div class="finale-bracelets" id="finalBraceletsBill"></div>
+      </div>
+    </div>
+    <button class="finale-cta" id="playAgainBtn">Play Again</button>
+  </div>
+
+  <!-- ═══════════════════════════════════════════════════════════
+       PHONE SCREENS
+       ═══════════════════════════════════════════════════════════ -->
+
+  <div class="phone-screen" id="ph-picker">
+    <div class="pp-eyebrow">ClubOS Games</div>
+    <h2 class="pp-title">13 <em>Eras</em></h2>
+    <p class="pp-subtitle">Choose your player</p>
+    <div class="pp-buttons">
+      <button class="pp-btn jodi" id="pickJodi" data-player="jodi">
+        <div class="pp-btn-name">Jodi</div>
+        <div class="pp-btn-status" id="pickJodiStatus">Available</div>
+      </button>
+      <button class="pp-btn bill" id="pickBill" data-player="bill">
+        <div class="pp-btn-name">Bill</div>
+        <div class="pp-btn-status" id="pickBillStatus">Available</div>
+      </button>
+    </div>
+    <div class="phone-footer">Powered by <span>ClubOS Games</span></div>
+  </div>
+
+  <div class="phone-screen" id="ph-waiting">
+    <div class="pw-banner" id="pwBanner">
+      <div class="pw-name" id="pwName"></div>
+      <div class="pw-message" id="pwMessage">You're in. Waiting for the other player.</div>
+      <div class="pw-submessage">The TV will start the game when both are ready.</div>
+      <div class="pw-loader"></div>
+    </div>
+    <div class="phone-footer">ClubOS Games · <span>13 Eras</span></div>
+  </div>
+
+  <div class="phone-screen" id="ph-question">
+    <div class="pq-header">
+      <div class="pq-player-tag">
+        <div class="pq-player-dot" id="pqDot"></div>
+        <div class="pq-player-name" id="pqName"></div>
+      </div>
+      <div class="pq-round">Q<span id="pqQNum">1</span> / 13</div>
+    </div>
+    <div class="pq-flag hidden" id="pqFlag"></div>
+    <div class="pq-question" id="pqText"></div>
+    <div class="pq-timer-bar"><div class="pq-timer-fill" id="pqTimerFill"></div></div>
+    <div class="pq-options" id="pqOptions"></div>
+  </div>
+
+  <div class="phone-screen" id="ph-reveal">
+    <div class="pr-banner" id="prBanner">
+      <div class="pr-result" id="prResult"></div>
+      <div class="pr-message" id="prMessage"></div>
+      <div class="pr-correct-answer" id="prCorrect"></div>
+      <div id="prBraceletWrap"></div>
+    </div>
+    <div class="phone-footer">Q<span id="prQNum">1</span> of 13</div>
+  </div>
+
+  <div class="phone-screen" id="ph-finale">
+    <div class="pf-card">
+      <div class="pf-result" id="pfResult"></div>
+      <div class="pf-score-line">You: <span id="pfYouScore">0</span> · Them: <span id="pfThemScore">0</span></div>
+      <div class="finale-bracelets" id="pfBracelets"></div>
+    </div>
+    <div class="phone-footer">Powered by <span>ClubOS Games</span></div>
+  </div>
+
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+// ═══════════════════════════════════════════════════════════════
+//  CLUBOS SWIFT TRIVIA — 13 ERAS
+//  Single-file build · TV + QR phones · Supabase realtime broadcast
+// ═══════════════════════════════════════════════════════════════
+
+const SUPA_URL = 'https://ykfvwqewnfnibpzytspn.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlrZnZ3cWV3bmZuaWJwenl0c3BuIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzQ4MjE2NzYsImV4cCI6MjA5MDM5NzY3Nn0.cnMztZVHDV3Hof-26aRi4NIM7wKwjzxAfoMBR3oItms';
+const ROOM = 'clubos-swift-trivia-jodi-bill';
+const supa = window.supabase.createClient(SUPA_URL, SUPA_KEY);
+
+// ── Mode detection ─────────────────────────────────────────────
+const params = new URLSearchParams(location.search);
+const mode = params.has('p') ? 'phone' : 'tv';
+let myPlayer = params.get('p') || null;
+if (myPlayer && !['jodi','bill'].includes(myPlayer)) myPlayer = null;
+document.body.classList.add(mode === 'tv' ? 'is-tv' : 'is-phone');
+
+// ── ERA THEMES ─────────────────────────────────────────────────
+const ERAS = [
+  { id: 1, name: 'Debut',      color: '#6FB7C2', glow: 'rgba(111,183,194,0.10)' },
+  { id: 2, name: 'Fearless',   color: '#D8A03A', glow: 'rgba(216,160,58,0.10)'  },
+  { id: 3, name: 'Speak Now',  color: '#9E7BB5', glow: 'rgba(158,123,181,0.10)' },
+  { id: 4, name: 'Red',        color: '#B0383A', glow: 'rgba(176,56,58,0.10)'   },
+  { id: 5, name: '1989',       color: '#D4A6B4', glow: 'rgba(212,166,180,0.10)' },
+  { id: 6, name: 'Reputation', color: '#B0B0B0', glow: 'rgba(50,50,50,0.20)'    },
+  { id: 7, name: 'Lover',      color: '#E8B5C8', glow: 'rgba(232,181,200,0.10)' },
+  { id: 8, name: 'Folklore',   color: '#8FA38A', glow: 'rgba(143,163,138,0.10)' },
+  { id: 9, name: 'Evermore',   color: '#A8693E', glow: 'rgba(168,105,62,0.10)'  },
+  { id: 10, name: 'Midnights', color: '#D4AF52', glow: 'rgba(31,41,82,0.20)'    },
+  { id: 11, name: 'TTPD',      color: '#E8E2D5', glow: 'rgba(232,226,213,0.06)' }
+];
+
+// Map question slot 1-13 to era theme
+function eraForSlot(slot) {
+  if (slot === 12) return { name: 'Surprise Song', color: '#F5C16E', glow: 'rgba(245,193,110,0.12)' };
+  if (slot === 13) return { name: 'Mastermind', color: '#D4AF52', glow: 'rgba(212,175,82,0.16)' };
+  // Slots 1-11 map directly to eras 1-11
+  return ERAS[slot - 1];
+}
+
+// ── QUESTION POOL ──────────────────────────────────────────────
+const QUESTION_POOL = [
+  // Albums & Eras
+  { cat: 'album', q: "What year did Taylor Swift's debut album drop?", opts: ["2004","2006","2008","2010"], a: 1 },
+  { cat: 'album', q: 'Which album features "All Too Well"?', opts: ["Speak Now","Red","1989","Reputation"], a: 1 },
+  { cat: 'album', q: 'Folklore was released during which global moment?', opts: ["Pandemic lockdown 2020","Reputation tour break","Pre-Lover era","After Midnights"], a: 0 },
+  { cat: 'album', q: "What is Taylor's signature lucky number?", opts: ["7","11","13","21"], a: 2 },
+  { cat: 'album', q: 'Which era is most associated with cottagecore aesthetics?', opts: ["1989","Reputation","Folklore","Midnights"], a: 2 },
+  { cat: 'album', q: 'Midnights was released in what year?', opts: ["2020","2021","2022","2023"], a: 2 },
+  { cat: 'album', q: "Which album is NOT yet a Taylor's Version re-recording?", opts: ["Fearless","Red","Speak Now","Lover"], a: 3 },
+  { cat: 'album', q: 'What animal dominated the Reputation era visuals?', opts: ["Hearts","Snakes","Stars","Cats"], a: 1 },
+  { cat: 'album', q: 'Which album includes the song "August"?', opts: ["Lover","Folklore","Evermore","Midnights"], a: 1 },
+  { cat: 'album', q: 'The Tortured Poets Department was released in what year?', opts: ["2022","2023","2024","2025"], a: 2 },
+
+  // Lyrics
+  { cat: 'lyric', q: '"Cause darling I\'m a ___, dressed up like a daydream"', opts: ["nightmare","ghost","firework","paper plane"], a: 0 },
+  { cat: 'lyric', q: '"We could leave the Christmas lights up ___"', opts: ["all winter","\u2018til January","\u2018til May","all year"], a: 1 },
+  { cat: 'lyric', q: '"And I, I, I love you, ain\'t that the worst thing ___"', opts: ["you ever heard","I\u2019ve ever said","that you know","I could say"], a: 0 },
+  { cat: 'lyric', q: '"Long live the walls we crashed through, how the ___ shined just for me and you"', opts: ["kingdom lights","spotlight","city lights","streetlights"], a: 0 },
+  { cat: 'lyric', q: '"Cause you were Romeo, I was a ___ letter"', opts: ["love","scarlet","sealed","sad"], a: 1 },
+  { cat: 'lyric', q: '"I got that good girl faith and a tight little ___"', opts: ["skirt","dress","jacket","smile"], a: 0 },
+  { cat: 'lyric', q: '"Hi, it\'s me, I\'m the ___, it\'s me"', opts: ["bad guy","one","problem","reason"], a: 2 },
+  { cat: 'lyric', q: '"When you are young, they assume you know ___"', opts: ["something","nothing","better","yourself"], a: 1 },
+
+  // Personal Life
+  { cat: 'life', q: 'What is the name of the first cat Taylor introduced to the world?', opts: ["Olivia Benson","Meredith Grey","Benjamin Button","Dibbles"], a: 1 },
+  { cat: 'life', q: 'Taylor was born in which U.S. state?', opts: ["Tennessee","New York","Pennsylvania","California"], a: 2 },
+  { cat: 'life', q: "Which is NOT one of Taylor's cats?", opts: ["Meredith Grey","Olivia Benson","Benjamin Button","Felix Hart"], a: 3 },
+  { cat: 'life', q: "What sport does Taylor's partner Travis Kelce play?", opts: ["Basketball","Football","Baseball","Soccer"], a: 1 },
+
+  // Music Videos & Easter Eggs
+  { cat: 'video', q: 'Which music video features Taylor playing multiple versions of herself at a dinner table?', opts: ["Blank Space","Anti-Hero","Look What You Made Me Do","Bejeweled"], a: 1 },
+  { cat: 'video', q: 'Which famous actress is NOT in the "Bad Blood" music video?', opts: ["Selena Gomez","Karlie Kloss","Jennifer Lawrence","Ellie Goulding"], a: 2 },
+  { cat: 'video', q: 'Taylor is famous for hiding clues for upcoming projects how far in advance?', opts: ["Days","Weeks","Months","Sometimes years"], a: 3 },
+  { cat: 'video', q: 'In which video does Taylor appear as a giant stomping through a city?', opts: ["Bejeweled","Anti-Hero","Wildest Dreams","Lavender Haze"], a: 1 },
+
+  // Eras Tour
+  { cat: 'tour', q: 'Approximately how many songs are in an Eras Tour setlist?', opts: ["~25","~35","~45","~55"], a: 2 },
+  { cat: 'tour', q: 'What unique mechanic makes every Eras Tour show different?', opts: ["Fan voting","Surprise songs","Random setlist","Rotating openers"], a: 1 },
+  { cat: 'tour', q: 'The Eras Tour officially opened in which city?', opts: ["Nashville","Glendale, AZ","Los Angeles","Philadelphia"], a: 1 },
+  { cat: 'tour', q: 'Eras Tour became the highest-grossing tour in music history.', opts: ["True","False","Tied with Beyoncé","Only in North America"], a: 0 },
+  { cat: 'tour', q: 'What item became the iconic fan tradition at Eras Tour shows?', opts: ["Cowboy hats","Friendship bracelets","Sequined dresses","Glow sticks"], a: 1 },
+
+  // Mastermind tier (harder)
+  { cat: 'master', q: "Taylor's first single released to country radio was titled what?", opts: ["Tim McGraw","Teardrops on My Guitar","Our Song","Picture to Burn"], a: 0 },
+  { cat: 'master', q: 'Who produced the majority of "Folklore"?', opts: ["Jack Antonoff","Aaron Dessner","Max Martin","William Bowery"], a: 1 },
+  { cat: 'master', q: 'On the re-recordings, "vault tracks" are:', opts: ["Songs cut from the original albums","Brand-new songs written today","Cover songs","Remixes"], a: 0 },
+  { cat: 'master', q: 'Which song is NOT on Midnights?', opts: ["Karma","Lavender Haze","Cardigan","Vigilante Shit"], a: 2 },
+  { cat: 'master', q: 'In what year was "Speak Now" originally released?', opts: ["2008","2010","2012","2014"], a: 1 }
+];
+
+// ── Pick 13 questions for a game ──────────────────────────────
+function buildGameQuestions() {
+  // Strategy: take a balanced mix, then fill with random
+  const byCat = {};
+  QUESTION_POOL.forEach(q => { (byCat[q.cat] = byCat[q.cat] || []).push(q); });
+  Object.values(byCat).forEach(arr => shuffle(arr));
+
+  // Slot mix (13 total): album×3, lyric×3, life×2, video×2, tour×2, master×1
+  const plan = ['album','album','album','lyric','lyric','lyric','life','life','video','video','tour','tour','master'];
+  const picked = [];
+  plan.forEach(cat => {
+    const q = byCat[cat] && byCat[cat].pop();
+    if (q) picked.push(q);
+  });
+  // If anything missing, fill from remaining
+  const remaining = QUESTION_POOL.filter(q => !picked.includes(q));
+  shuffle(remaining);
+  while (picked.length < 13) picked.push(remaining.pop());
+
+  // Shuffle the order so easy/hard aren't predictable
+  shuffle(picked);
+
+  // Mark Q13 as Mastermind — swap a 'master' question into slot 13 if not already
+  const masterIdx = picked.findIndex(q => q.cat === 'master');
+  if (masterIdx >= 0 && masterIdx !== 12) {
+    [picked[12], picked[masterIdx]] = [picked[masterIdx], picked[12]];
+  }
+
+  // Pick a slot 4-10 to be the Easter Egg
+  const easterSlot = 3 + Math.floor(Math.random() * 7); // 3..9 (slot 4-10)
+  // Slot 12 is "Surprise Song"
+  return picked.map((q, i) => ({
+    ...q,
+    slot: i + 1,
+    isEaster: i === easterSlot,
+    isSurprise: i === 11,
+    isMastermind: i === 12
+  }));
+}
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  STATE & CHANNEL
+// ═══════════════════════════════════════════════════════════════
+let state = {
+  phase: 'lobby',           // lobby | countdown | question | reveal | finale
+  players: { jodi: false, bill: false },
+  currentQ: 0,              // 0-indexed
+  questions: [],
+  answers: {},              // per-question: { jodi: idx, bill: idx }
+  scores: { jodi: 0, bill: 0 },
+  bracelets: { jodi: [], bill: [] },
+  streaks: { jodi: 0, bill: 0 },
+  questionStartedAt: 0,
+  timeLimit: 25
+};
+
+let myAnswered = false;
+let channel = null;
+
+function show(screenId) {
+  document.querySelectorAll('.screen, .phone-screen').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(screenId);
+  if (el) el.classList.add('active');
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  SUPABASE REALTIME
+// ═══════════════════════════════════════════════════════════════
+function initChannel() {
+  channel = supa.channel(ROOM, { config: { broadcast: { self: true, ack: false } } });
+  channel.on('broadcast', { event: 'state' }, (payload) => {
+    if (mode === 'phone') applyState(payload.payload);
+  });
+  channel.on('broadcast', { event: 'join' }, (payload) => {
+    if (mode === 'tv') {
+      const p = payload.payload.player;
+      state.players[p] = true;
+      broadcastState();
+      if (state.players.jodi && state.players.bill && state.phase === 'lobby') {
+        startCountdown();
+      }
+    }
+  });
+  channel.on('broadcast', { event: 'answer' }, (payload) => {
+    if (mode === 'tv') handlePlayerAnswer(payload.payload);
+  });
+  channel.on('broadcast', { event: 'restart' }, () => {
+    if (mode === 'tv') resetGame();
+  });
+  channel.subscribe((status) => {
+    if (status === 'SUBSCRIBED') {
+      console.log('[ClubOS] channel ready as', mode);
+      if (mode === 'tv') broadcastState();
+      if (mode === 'phone' && myPlayer) sendJoin();
+    }
+  });
+}
+
+function broadcastState() {
+  channel.send({ type: 'broadcast', event: 'state', payload: state });
+  if (mode === 'tv') renderTV();
+}
+
+function applyState(s) {
+  state = s;
+  renderPhone();
+}
+
+function sendJoin() {
+  channel.send({ type: 'broadcast', event: 'join', payload: { player: myPlayer } });
+}
+
+function sendAnswer(idx) {
+  channel.send({ type: 'broadcast', event: 'answer', payload: { player: myPlayer, answerIdx: idx } });
+}
+
+function sendRestart() {
+  channel.send({ type: 'broadcast', event: 'restart', payload: {} });
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  GAME FLOW (TV is master)
+// ═══════════════════════════════════════════════════════════════
+function resetGame() {
+  state = {
+    phase: 'lobby',
+    players: { jodi: state.players.jodi, bill: state.players.bill },
+    currentQ: 0,
+    questions: [],
+    answers: {},
+    scores: { jodi: 0, bill: 0 },
+    bracelets: { jodi: [], bill: [] },
+    streaks: { jodi: 0, bill: 0 },
+    questionStartedAt: 0,
+    timeLimit: 25
+  };
+  broadcastState();
+  if (state.players.jodi && state.players.bill) startCountdown();
+}
+
+function startCountdown() {
+  state.phase = 'countdown';
+  state.questions = buildGameQuestions();
+  state.currentQ = 0;
+  state.answers = {};
+  state.scores = { jodi: 0, bill: 0 };
+  state.bracelets = { jodi: [], bill: [] };
+  state.streaks = { jodi: 0, bill: 0 };
+  broadcastState();
+
+  let n = 3;
+  document.getElementById('countdownNum').textContent = n;
+  const tick = setInterval(() => {
+    n--;
+    if (n <= 0) {
+      clearInterval(tick);
+      startQuestion();
+    } else {
+      document.getElementById('countdownNum').textContent = n;
+      document.getElementById('countdownNum').style.animation = 'none';
+      void document.getElementById('countdownNum').offsetWidth;
+      document.getElementById('countdownNum').style.animation = 'countdownPulse 1s ease-out';
+    }
+  }, 1000);
+}
+
+function startQuestion() {
+  state.phase = 'question';
+  state.answers[state.currentQ] = {};
+  const q = state.questions[state.currentQ];
+  state.timeLimit = q.isMastermind ? 35 : 25;
+  state.questionStartedAt = Date.now();
+  broadcastState();
+  runTimer();
+}
+
+let timerInterval = null;
+function runTimer() {
+  if (timerInterval) clearInterval(timerInterval);
+  const tvT = document.getElementById('tvTimer');
+  let remaining = state.timeLimit;
+  tvT.textContent = remaining;
+  tvT.classList.remove('warning');
+
+  timerInterval = setInterval(() => {
+    remaining--;
+    if (tvT) {
+      tvT.textContent = Math.max(0, remaining);
+      if (remaining <= 5) tvT.classList.add('warning');
+    }
+    // Both players locked in?
+    const ans = state.answers[state.currentQ] || {};
+    const bothIn = ans.jodi !== undefined && ans.bill !== undefined;
+    if (remaining <= 0 || bothIn) {
+      clearInterval(timerInterval);
+      timerInterval = null;
+      revealAnswer();
+    }
+  }, 1000);
+}
+
+function handlePlayerAnswer({ player, answerIdx }) {
+  if (state.phase !== 'question') return;
+  state.answers[state.currentQ] = state.answers[state.currentQ] || {};
+  if (state.answers[state.currentQ][player] !== undefined) return;
+  state.answers[state.currentQ][player] = answerIdx;
+  broadcastState();
+}
+
+function revealAnswer() {
+  state.phase = 'reveal';
+  const q = state.questions[state.currentQ];
+  const ans = state.answers[state.currentQ] || {};
+  const correctIdx = q.a;
+
+  // Score
+  let mult = 1;
+  if (q.isMastermind) mult = 2;
+  if (q.isEaster) mult = 2;
+
+  ['jodi','bill'].forEach(p => {
+    if (ans[p] === correctIdx) {
+      state.scores[p] += mult;
+      state.streaks[p] += 1;
+      // Bracelet checks
+      checkBracelets(p);
+    } else {
+      state.streaks[p] = 0;
+    }
+  });
+
+  broadcastState();
+  renderRevealOnTV();
+
+  // Auto-advance after delay
+  setTimeout(() => {
+    if (state.currentQ < 12) {
+      state.currentQ++;
+      startQuestion();
+    } else {
+      goToFinale();
+    }
+  }, 5000);
+}
+
+function checkBracelets(p) {
+  const have = state.bracelets[p];
+  const has = (id) => have.some(b => b.id === id);
+  const add = (id, label) => { if (!has(id)) have.push({ id, label }); };
+
+  // First Word — first correct answer
+  if (state.streaks[p] === 1 && state.scores[p] > 0 && !has('first')) {
+    add('first', 'First Word');
+  }
+  // Streak Three
+  if (state.streaks[p] === 3) add('streak3', 'Streak ×3');
+  // Streak Five
+  if (state.streaks[p] === 5) add('streak5', 'Streak ×5');
+  // Mastermind
+  const q = state.questions[state.currentQ];
+  if (q && q.isMastermind && state.answers[state.currentQ][p] === q.a) {
+    add('mastermind', 'Mastermind');
+  }
+  // Easter Egg
+  if (q && q.isEaster && state.answers[state.currentQ][p] === q.a) {
+    add('easter', 'Eagle Eye');
+  }
+}
+
+function goToFinale() {
+  state.phase = 'finale';
+  // Score-based bracelets
+  ['jodi','bill'].forEach(p => {
+    if (state.scores[p] >= 10 && !state.bracelets[p].some(b => b.id === 'realswiftie')) {
+      state.bracelets[p].push({ id: 'realswiftie', label: 'Real Swiftie' });
+    }
+    if (state.scores[p] === 13 && !state.bracelets[p].some(b => b.id === 'perfect')) {
+      state.bracelets[p].push({ id: 'perfect', label: 'Era of My Life' });
+    }
+  });
+  broadcastState();
+  renderFinaleTV();
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  TV RENDER
+// ═══════════════════════════════════════════════════════════════
+function renderTV() {
+  if (mode !== 'tv') return;
+
+  if (state.phase === 'lobby') {
+    show('tv-lobby');
+    document.getElementById('slot-jodi').classList.toggle('connected', state.players.jodi);
+    document.getElementById('slot-bill').classList.toggle('connected', state.players.bill);
+    document.querySelector('#slot-jodi .lobby-slot-status').textContent = state.players.jodi ? 'In' : 'Waiting';
+    document.querySelector('#slot-bill .lobby-slot-status').textContent = state.players.bill ? 'In' : 'Waiting';
+    return;
+  }
+  if (state.phase === 'countdown') {
+    show('tv-countdown');
+    return;
+  }
+  if (state.phase === 'question' || state.phase === 'reveal') {
+    show('tv-game');
+    renderQuestionTV();
+    return;
+  }
+  if (state.phase === 'finale') {
+    show('tv-finale');
+    renderFinaleTV();
+    return;
+  }
+}
+
+function renderQuestionTV() {
+  const q = state.questions[state.currentQ];
+  if (!q) return;
+
+  // Era theme
+  const era = eraForSlot(q.slot);
+  document.body.style.setProperty('--era-color', era.color);
+  document.body.style.setProperty('--era-glow', era.glow);
+  document.getElementById('eraName').textContent = era.name;
+
+  document.getElementById('qNumCurrent').textContent = q.slot;
+  document.getElementById('qText').textContent = q.q;
+
+  // Flag
+  const flag = document.getElementById('qFlag');
+  if (q.isMastermind) {
+    flag.style.display = 'flex';
+    flag.className = 'question-flag mastermind';
+    flag.textContent = '✦ Mastermind · 2× Points';
+  } else if (q.isEaster) {
+    flag.style.display = 'flex';
+    flag.className = 'question-flag easter';
+    flag.textContent = '✨ Easter Egg · 2× Points';
+  } else if (q.isSurprise) {
+    flag.style.display = 'flex';
+    flag.className = 'question-flag surprise';
+    flag.textContent = '♪ Surprise Song';
+  } else {
+    flag.style.display = 'none';
+  }
+
+  // Options
+  const opts = document.getElementById('qOptions');
+  const ans = state.answers[state.currentQ] || {};
+  const showReveal = state.phase === 'reveal';
+  opts.innerHTML = q.opts.map((o, i) => {
+    const letter = ['A','B','C','D'][i];
+    let cls = 'answer-tile';
+    if (showReveal) {
+      if (i === q.a) cls += ' reveal-correct';
+      else cls += ' reveal-wrong';
+    }
+    const pickers = [];
+    if (showReveal) {
+      if (ans.jodi === i) pickers.push('<div class="answer-pick-dot jodi" title="Jodi"></div>');
+      if (ans.bill === i) pickers.push('<div class="answer-pick-dot bill" title="Bill"></div>');
+    }
+    return `
+      <div class="${cls}">
+        <div class="answer-letter">${letter}</div>
+        <div class="answer-text">${o}</div>
+        ${pickers.length ? `<div class="answer-pickers">${pickers.join('')}</div>` : ''}
+      </div>`;
+  }).join('');
+
+  // Scores
+  document.getElementById('score-jodi').textContent = state.scores.jodi;
+  document.getElementById('score-bill').textContent = state.scores.bill;
+
+  // Status
+  document.getElementById('status-jodi').textContent = ans.jodi !== undefined ? 'Locked In' : 'Thinking…';
+  document.getElementById('status-bill').textContent = ans.bill !== undefined ? 'Locked In' : 'Thinking…';
+  document.getElementById('card-jodi').classList.toggle('locked', ans.jodi !== undefined);
+  document.getElementById('card-bill').classList.toggle('locked', ans.bill !== undefined);
+
+  // Bracelets
+  renderBraceletsTV();
+
+  // Reveal banner
+  const banner = document.getElementById('revealBanner');
+  if (showReveal) {
+    banner.classList.add('show');
+    const correct = q.a;
+    document.getElementById('revealResultJodi').className = 'reveal-result jodi';
+    document.getElementById('revealResultBill').className = 'reveal-result bill';
+    document.getElementById('revealResultJodi').textContent = `Jodi: ${ans.jodi === correct ? 'CORRECT' : (ans.jodi === undefined ? 'MISSED' : 'WRONG')}`;
+    document.getElementById('revealResultBill').textContent = `Bill: ${ans.bill === correct ? 'CORRECT' : (ans.bill === undefined ? 'MISSED' : 'WRONG')}`;
+  } else {
+    banner.classList.remove('show');
+  }
+}
+
+function renderBraceletsTV() {
+  ['jodi','bill'].forEach(p => {
+    const track = document.getElementById('bracelets-' + p);
+    const label = `${p === 'jodi' ? "Jodi's" : "Bill's"} Bracelets`;
+    const beads = state.bracelets[p].map(b => `<div class="bracelet">${b.label}</div>`).join('');
+    if (p === 'jodi') {
+      track.innerHTML = `<div class="bracelet-track-label">${label}</div>${beads}`;
+    } else {
+      track.innerHTML = `${beads}<div class="bracelet-track-label">${label}</div>`;
+    }
+  });
+}
+
+function renderRevealOnTV() {
+  renderQuestionTV();
+}
+
+function renderFinaleTV() {
+  const j = state.scores.jodi, b = state.scores.bill;
+  const winner = j === b ? 'tie' : (j > b ? 'jodi' : 'bill');
+  const wEl = document.getElementById('winnerName');
+  if (winner === 'tie') {
+    wEl.textContent = 'A Tie';
+    wEl.className = 'finale-winner-name tie';
+    document.getElementById('winnerTagline').textContent = "It's me, hi, you both nailed it.";
+  } else {
+    wEl.textContent = winner === 'jodi' ? 'Jodi Wins' : 'Bill Wins';
+    wEl.className = 'finale-winner-name ' + winner;
+    document.getElementById('winnerTagline').textContent = winner === 'jodi'
+      ? "She's a Mastermind."
+      : "Long live the would-be Swiftie.";
+  }
+  document.getElementById('finalScoreJodi').textContent = j;
+  document.getElementById('finalScoreBill').textContent = b;
+  document.getElementById('finalBraceletsJodi').innerHTML =
+    state.bracelets.jodi.map(b => `<div class="bracelet">${b.label}</div>`).join('') || '<div style="color:var(--ink-faint);font-size:11px;letter-spacing:2px;text-transform:uppercase;">No bracelets earned</div>';
+  document.getElementById('finalBraceletsBill').innerHTML =
+    state.bracelets.bill.map(b => `<div class="bracelet">${b.label}</div>`).join('') || '<div style="color:var(--ink-faint);font-size:11px;letter-spacing:2px;text-transform:uppercase;">No bracelets earned</div>';
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  PHONE RENDER
+// ═══════════════════════════════════════════════════════════════
+function renderPhone() {
+  if (mode !== 'phone') return;
+
+  // No player picked yet
+  if (!myPlayer) {
+    show('ph-picker');
+    document.getElementById('pickJodi').toggleAttribute('disabled', state.players.jodi);
+    document.getElementById('pickBill').toggleAttribute('disabled', state.players.bill);
+    document.getElementById('pickJodiStatus').textContent = state.players.jodi ? 'Taken' : 'Available';
+    document.getElementById('pickBillStatus').textContent = state.players.bill ? 'Taken' : 'Available';
+    return;
+  }
+
+  if (state.phase === 'lobby' || state.phase === 'countdown') {
+    show('ph-waiting');
+    document.getElementById('pwBanner').className = 'pw-banner ' + myPlayer;
+    document.getElementById('pwName').textContent = myPlayer === 'jodi' ? 'Jodi' : 'Bill';
+    if (state.phase === 'countdown') {
+      document.getElementById('pwMessage').textContent = 'Get ready…';
+    } else {
+      const otherIn = state.players[myPlayer === 'jodi' ? 'bill' : 'jodi'];
+      document.getElementById('pwMessage').textContent = otherIn
+        ? "You're in. Starting up."
+        : `You're in. Waiting for ${myPlayer === 'jodi' ? 'Bill' : 'Jodi'}.`;
+    }
+    return;
+  }
+
+  if (state.phase === 'question') {
+    show('ph-question');
+    const q = state.questions[state.currentQ];
+    document.getElementById('pqDot').className = 'pq-player-dot ' + myPlayer;
+    document.getElementById('pqName').textContent = myPlayer === 'jodi' ? 'Jodi' : 'Bill';
+    document.getElementById('pqQNum').textContent = q.slot;
+
+    const flag = document.getElementById('pqFlag');
+    if (q.isMastermind) { flag.className = 'pq-flag mastermind'; flag.textContent = '✦ Mastermind · 2× Points'; }
+    else if (q.isEaster) { flag.className = 'pq-flag easter'; flag.textContent = '✨ Easter Egg · 2× Points'; }
+    else if (q.isSurprise) { flag.className = 'pq-flag surprise'; flag.textContent = '♪ Surprise Song'; }
+    else flag.className = 'pq-flag hidden';
+
+    document.getElementById('pqText').textContent = q.q;
+
+    const ans = state.answers[state.currentQ] || {};
+    const myAns = ans[myPlayer];
+    myAnswered = myAns !== undefined;
+
+    const optsEl = document.getElementById('pqOptions');
+    optsEl.innerHTML = q.opts.map((o, i) => {
+      const letter = ['A','B','C','D'][i];
+      const locked = myAns === i;
+      const dis = myAnswered && !locked ? 'disabled' : '';
+      return `<button class="pq-option ${locked ? 'locked' : ''}" data-idx="${i}" ${dis}>
+        <div class="pq-option-letter">${letter}</div>
+        <div class="pq-option-text">${o}</div>
+      </button>`;
+    }).join('');
+
+    optsEl.querySelectorAll('.pq-option').forEach(btn => {
+      btn.addEventListener('click', () => {
+        if (myAnswered) return;
+        const idx = parseInt(btn.dataset.idx);
+        myAnswered = true;
+        sendAnswer(idx);
+      });
+    });
+
+    // Local timer bar (synced from broadcasted start time)
+    const fill = document.getElementById('pqTimerFill');
+    fill.style.transition = 'none';
+    fill.style.width = '100%';
+    void fill.offsetWidth;
+    const elapsed = (Date.now() - state.questionStartedAt) / 1000;
+    const remaining = Math.max(0, state.timeLimit - elapsed);
+    fill.style.transition = `width ${remaining}s linear`;
+    fill.style.width = '0%';
+    return;
+  }
+
+  if (state.phase === 'reveal') {
+    show('ph-reveal');
+    const q = state.questions[state.currentQ];
+    const ans = state.answers[state.currentQ] || {};
+    const my = ans[myPlayer];
+    const correct = my === q.a;
+    const banner = document.getElementById('prBanner');
+    banner.className = 'pr-banner ' + (correct ? 'correct' : 'wrong');
+    document.getElementById('prResult').textContent = correct ? 'CORRECT' : (my === undefined ? 'MISSED' : 'WRONG');
+
+    let msg = '';
+    if (correct && (q.isMastermind || q.isEaster)) msg = 'Bonus question — double points!';
+    else if (correct) msg = `+${state.streaks[myPlayer] >= 3 ? '1 (streak ×' + state.streaks[myPlayer] + ')' : '1 point'}`;
+    else if (my === undefined) msg = 'Out of time';
+    else msg = 'Tough one.';
+    document.getElementById('prMessage').textContent = msg;
+    document.getElementById('prCorrect').textContent = `Answer: ${q.opts[q.a]}`;
+    document.getElementById('prQNum').textContent = q.slot;
+
+    // Bracelet just earned?
+    const wrap = document.getElementById('prBraceletWrap');
+    wrap.innerHTML = '';
+    const myBrac = state.bracelets[myPlayer];
+    if (myBrac.length) {
+      const last = myBrac[myBrac.length - 1];
+      // Show the most recent if just earned this round
+      wrap.innerHTML = `<div class="pr-bracelet">+ ${last.label}</div>`;
+    }
+    return;
+  }
+
+  if (state.phase === 'finale') {
+    show('ph-finale');
+    const my = state.scores[myPlayer];
+    const them = state.scores[myPlayer === 'jodi' ? 'bill' : 'jodi'];
+    const result = my > them ? 'YOU WIN' : my < them ? 'YOU LOST' : "IT'S A TIE";
+    const el = document.getElementById('pfResult');
+    el.textContent = result;
+    el.style.color = my > them ? 'var(--correct)' : my < them ? 'var(--wrong)' : 'var(--gold)';
+    document.getElementById('pfYouScore').textContent = my;
+    document.getElementById('pfThemScore').textContent = them;
+    document.getElementById('pfBracelets').innerHTML =
+      state.bracelets[myPlayer].map(b => `<div class="bracelet">${b.label}</div>`).join('') || '';
+    return;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════
+//  WIRING
+// ═══════════════════════════════════════════════════════════════
+
+if (mode === 'tv') {
+  // QR code for phone
+  const phoneURL = location.origin + location.pathname + '?p=';
+  document.getElementById('lobbyQR').src =
+    'https://api.qrserver.com/v1/create-qr-code/?data=' + encodeURIComponent(phoneURL) + '&size=400x400&margin=10';
+  document.getElementById('lobbyURL').textContent = phoneURL;
+
+  document.getElementById('playAgainBtn').addEventListener('click', resetGame);
+
+  initChannel();
+  renderTV();
+}
+
+if (mode === 'phone') {
+  // Picker buttons
+  ['jodi','bill'].forEach(p => {
+    document.getElementById(p === 'jodi' ? 'pickJodi' : 'pickBill').addEventListener('click', () => {
+      if (state.players[p]) return;
+      myPlayer = p;
+      // Update URL without reload
+      const url = new URL(location.href);
+      url.searchParams.set('p', p);
+      history.replaceState({}, '', url);
+      sendJoin();
+      renderPhone();
+    });
+  });
+  initChannel();
+  renderPhone();
+}
+
+</script>
+</body>
+</html>
